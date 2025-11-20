@@ -1,5 +1,3 @@
-const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:3000`;
-
 class SessionSocket {
   constructor() {
     this.ws = null;
@@ -8,6 +6,17 @@ class SessionSocket {
     this.status = 'disconnected';
     this.connectPromise = null;
     this.queue = [];
+    this.wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:3000`;
+  }
+
+  setWsUrl(url) {
+    if (url) {
+      this.wsUrl = url;
+    }
+  }
+
+  getWsUrl() {
+    return this.wsUrl;
   }
 
   setStatus(status) {
@@ -40,7 +49,10 @@ class SessionSocket {
 
     this.connectPromise = new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(WS_URL);
+        if (!this.wsUrl) {
+          throw new Error('WebSocket URL is not configured');
+        }
+        this.ws = new WebSocket(this.wsUrl);
       } catch (err) {
         this.setStatus('disconnected');
         this.connectPromise = null;

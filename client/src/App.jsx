@@ -11,6 +11,7 @@ import {
 import JoinSessionScreen from './components/JoinSessionScreen';
 import SessionScreen from './components/SessionScreen';
 import sessionSocket from './socket/sessionSocket';
+import { fetchWsConfig } from './configLoader';
 
 function useSessionIdFromUrl() {
   const params = useParams();
@@ -25,6 +26,8 @@ function SessionRoute() {
 
   const [sessionState, setSessionState] = useState(null);
   const [error, setError] = useState('');
+  const [configError, setConfigError] = useState('');
+  const [configLoaded, setConfigLoaded] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(
     sessionSocket.getStatus()
   );
@@ -79,6 +82,25 @@ function SessionRoute() {
   );
 
   useEffect(() => {
+    let cancelled = false;
+    fetchWsConfig()
+      .then((cfg) => {
+        if (cancelled) return;
+        sessionSocket.setWsUrl(cfg.wsUrl);
+        setConfigLoaded(true);
+        setConfigError(cfg.error ? `Config fallback: ${cfg.error}` : '');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setConfigLoaded(true);
+        setConfigError(err?.message || 'Failed to load configuration');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = sessionSocket.subscribe(handleMessage);
     const unsubscribeStatus = sessionSocket.subscribeStatus(setConnectionStatus);
     return () => {
@@ -117,6 +139,7 @@ function SessionRoute() {
 
   return (
     <div className="app-shell">
+      {!configLoaded && <div className="toast info">Загрузка конфигурации...</div>}
       {isJoined ? (
         <SessionScreen
           session={sessionState}
@@ -134,6 +157,7 @@ function SessionRoute() {
         />
       )}
       {error && <div className="toast error">{error}</div>}
+      {configError && <div className="toast warning">{configError}</div>}
       {connectionStatus !== 'connected' && (
         <div className="toast warning">Connection: {connectionStatus}</div>
       )}

@@ -11,7 +11,11 @@ npm install # no external dependencies required
 npm start
 ```
 
-The server listens on `PORT` (default `3000`).
+The server listens on `PORT` (default `3000`). WebSocket host/port/public URL can
+be configured in `config/ws-config.json` and overridden via `WS_HOST`, `PORT`, or
+`PUBLIC_WS_URL`. The server also exposes the same configuration at
+`/config/ws-config.json` so clients can auto-discover the correct WebSocket entry
+point.
 
 > ⚠️ The client tooling supports Node.js 12.22+ (including both x86_64 and arm64 builds). Node 18+ remains recommended for best dev-server compatibility.
 
@@ -22,7 +26,9 @@ npm run client:install
 npm run dev # Vite dev server at http://localhost:5173 (runs from ./client)
 ```
 
-Set `VITE_WS_URL` if the WebSocket server is not available on `ws://localhost:3000`.
+By default, the client fetches `config/ws-config.json` from the server to learn the
+WebSocket address. You can still override it explicitly with `VITE_WS_URL` if the
+config endpoint is unreachable.
 
 ## Protocol overview
 
