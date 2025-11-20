@@ -1,11 +1,11 @@
 # dnd_disaster
 
-Minimal WebSocket server for managing lightweight D&D disaster game sessions. Sessions are kept in memory.
+Minimal WebSocket server for managing lightweight D&D disaster game sessions. Sessions are kept purely in memory.
 
 ## Running
 
 ```bash
-npm install # (no external deps, but initializes lockfile if desired)
+npm install # no external dependencies required
 npm start
 ```
 
@@ -13,14 +13,27 @@ The server listens on `PORT` (default `3000`).
 
 ## Protocol overview
 
-All communication occurs over WebSocket text frames containing JSON objects. Supported message types:
+All communication occurs over WebSocket text frames containing JSON objects.
 
-- `create_session` `{ name }`: Creates a new session and joins as the first player/admin. Response: `session_created` with `sessionId` and `playerId`.
-- `join_session` `{ name, sessionId }`: Joins an existing session. Response: `session_joined` with identifiers.
-- `leave_session`: Removes the caller from the session.
-- `set_role` `{ role }`: Updates the caller's role. Broadcasts `role_update` and `players_update`.
-- `roll_dice` `{ dice }`: Server rolls dice (e.g., `d20`) and broadcasts `dice_roll`.
-- `log_message` `{ message }`: Adds an entry to the session log and broadcasts `log_event`.
+### Client → Server
+- `create_session` `{ name }`: Create a new session and join as the first player/admin. Response: `session_joined` snapshot.
+- `join_session` `{ name, sessionId }`: Join an existing session. Response: `session_joined` snapshot.
+- `leave_session`: Voluntarily leave the session.
+- `set_role` `{ role }`: Update the caller's role.
+- `roll_dice` `{ dice: "d20" }`: Server rolls the dice and broadcasts the result.
+- `send_log` `{ message }`: Append a message to the shared log.
 - `destroy_session`: Admin-only; closes the session and disconnects players.
 
-Broadcasts include `players_update`, `role_update`, `log_event`, `dice_roll`, and `session_destroyed` messages.
+### Server → Client
+- `session_joined`: Snapshot containing `sessionId`, `playerId`, `adminId`, `players`, `log`, and `roles` when you join/create.
+- `players_update`: Emitted whenever players join/leave/change roles; includes `players` and `adminId`.
+- `role_update`: Announces a single player's role change.
+- `dice_roll`: Broadcast result of a server-side roll.
+- `log_event`: Timestamped log entry appended by any player or server actions.
+- `session_destroyed`: Sent when the admin closes a session.
+- `error`: Sent on invalid payloads or unauthorized actions.
+
+### Session lifecycle
+- First player is auto-promoted to admin; if the admin disconnects, the next remaining player becomes admin.
+- Disconnects remove the player from the session and trigger `players_update`.
+- Empty sessions are deleted automatically.
