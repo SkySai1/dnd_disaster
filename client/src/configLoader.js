@@ -6,8 +6,7 @@ function buildDefaultWsUrl() {
 
 const DEFAULT_WS_URL = buildDefaultWsUrl();
 const DEFAULT_CONFIG_ENDPOINT = '/config/ws-config.json';
-const FALLBACK_CONFIG_ORIGIN =
-  import.meta.env.VITE_CONFIG_FALLBACK_ORIGIN || 'http://localhost:3000';
+const FALLBACK_CONFIG_ORIGIN = 'http://localhost:3000';
 
 async function fetchConfigOnce(url) {
   const response = await fetch(url);
@@ -18,7 +17,7 @@ async function fetchConfigOnce(url) {
 }
 
 export async function fetchWsConfig() {
-  const endpoint = import.meta.env.VITE_CONFIG_URL || DEFAULT_CONFIG_ENDPOINT;
+  const endpoint = DEFAULT_CONFIG_ENDPOINT;
   const attempts = [endpoint];
 
   if (endpoint.startsWith('/') && FALLBACK_CONFIG_ORIGIN) {
@@ -36,7 +35,6 @@ export async function fetchWsConfig() {
           (json.host && json.port
             ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${json.host}:${json.port}`
             : null) ||
-          import.meta.env.VITE_WS_URL ||
           DEFAULT_WS_URL,
         host: json.host,
         port: json.port,
@@ -49,7 +47,7 @@ export async function fetchWsConfig() {
 
   console.warn('Falling back to inline WebSocket URL due to config fetch errors:', errors);
   return {
-    wsUrl: import.meta.env.VITE_WS_URL || DEFAULT_WS_URL,
+    wsUrl: DEFAULT_WS_URL,
     host: undefined,
     port: undefined,
     source: 'fallback',

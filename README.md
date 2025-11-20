@@ -11,11 +11,12 @@ npm install # no external dependencies required
 npm start
 ```
 
-The server listens on `PORT` (default `3000`). WebSocket host/port/public URL can
-be configured in `config/ws-config.json` and overridden via `WS_HOST`, `PORT`, or
-`PUBLIC_WS_URL`. The server also exposes the same configuration at
-`/config/ws-config.json` so clients can auto-discover the correct WebSocket entry
-point.
+The server listens on `PORT` (default `3000`). WebSocket host/port/public URL is
+set entirely through environment variables (`WS_HOST`, `WS_PORT`/`PORT`,
+`PUBLIC_WS_URL`/`WS_PUBLIC_URL`). The server exposes the live configuration at
+`/config/ws-config.json`, which means you can change these environment variables
+and restart the server without rebuilding the client—browsers will fetch the
+updated WebSocket entry point at runtime.
 
 > ⚠️ The client tooling supports Node.js 12.22+ (including both x86_64 and arm64 builds). Node 18+ remains recommended for best dev-server compatibility.
 
@@ -27,17 +28,12 @@ npm run dev # Vite dev server at http://localhost:5173 (runs from ./client)
 ```
 
 By default, the client fetches `/config/ws-config.json` from the server to learn the
-WebSocket address. During development, `/config` requests are proxied to
+WebSocket address at runtime. During development, `/config` requests are proxied to
 `http://localhost:3000` (set `VITE_CONFIG_PROXY_TARGET` to change this) and the client
 will make a second attempt to `http://localhost:3000/config/ws-config.json` if the
-first lookup fails. You can override these behaviors with:
-
-- `VITE_CONFIG_URL` — custom config endpoint (defaults to `/config/ws-config.json`).
-- `VITE_CONFIG_PROXY_TARGET` — dev-only proxy target for `/config` (defaults to
-  `http://localhost:3000`).
-- `VITE_CONFIG_FALLBACK_ORIGIN` — origin for the second fetch attempt when the first
-  fails (defaults to `http://localhost:3000`).
-- `VITE_WS_URL` — direct override for the WebSocket URL (bypasses config endpoint).
+first lookup fails. Because the WebSocket URL is supplied by the server at runtime,
+changing the environment variables above and restarting the backend is enough to
+retarget clients—even after a production build.
 
 ## Protocol overview
 

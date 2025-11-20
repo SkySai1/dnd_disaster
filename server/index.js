@@ -1,32 +1,19 @@
 const http = require('http');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const { setupSocket } = require('./websocketServer');
 
-const configPath = path.join(__dirname, '..', 'config', 'ws-config.json');
+function buildRuntimeConfig() {
+  const host = process.env.WS_HOST || process.env.HOST || '0.0.0.0';
+  const port = Number(process.env.WS_PORT || process.env.PORT || 3000);
+  const publicWsUrl =
+    process.env.PUBLIC_WS_URL || process.env.WS_PUBLIC_URL || `ws://${host}:${port}`;
 
-function loadWsConfig() {
-  try {
-    const file = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(file);
-  } catch (err) {
-    console.warn('Unable to read ws-config.json, falling back to defaults:', err);
-    return {};
-  }
+  return {
+    wsUrl: publicWsUrl,
+    host,
+    port,
+  };
 }
-
-const rawConfig = loadWsConfig();
-const HOST = process.env.WS_HOST || rawConfig.host || '0.0.0.0';
-const PORT = Number(process.env.PORT || rawConfig.port || 3000);
-const PUBLIC_WS_URL =
-  process.env.PUBLIC_WS_URL || rawConfig.publicWsUrl || `ws://${HOST}:${PORT}`;
-
-const sharedConfigBody = JSON.stringify({
-  wsUrl: PUBLIC_WS_URL,
-  host: HOST,
-  port: PORT,
-});
 
 function handleHttpRequest(req, res) {
   if (req.method === 'GET' && req.url === '/config/ws-config.json') {
@@ -34,7 +21,7 @@ function handleHttpRequest(req, res) {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
     });
-    res.end(sharedConfigBody);
+    res.end(JSON.stringify(buildRuntimeConfig()));
     return;
   }
   res.statusCode = 404;
@@ -73,6 +60,9 @@ server.on('upgrade', (req, socket) => {
   setupSocket(socket);
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`WebSocket server running on ${HOST}:${PORT} (public ${PUBLIC_WS_URL})`);
+const runtimeConfig = buildRuntimeConfig();
+server.listen(runtimeConfig.port, runtimeConfig.host, () => {
+  console.log(
+    `WebSocket server running on ${runtimeConfig.host}:${runtimeConfig.port} (public ${runtimeConfig.wsUrl})`
+  );
 });
