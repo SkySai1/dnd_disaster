@@ -16,9 +16,8 @@ The server listens on `PORT` (default `3000`).
 ### Client (Stage 2 prototype)
 
 ```
-cd client
-npm install
-npm run dev # Vite dev server at http://localhost:5173
+npm run client:install
+npm run dev # Vite dev server at http://localhost:5173 (runs from ./client)
 ```
 
 Set `VITE_WS_URL` if the WebSocket server is not available on `ws://localhost:3000`.

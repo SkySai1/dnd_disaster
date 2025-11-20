@@ -4,7 +4,11 @@
   "description": "Realtime D&D disaster helper server",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "dev": "npm --prefix client run dev",
+    "client:install": "npm --prefix client install",
+    "client:build": "npm --prefix client run build",
+    "client:preview": "npm --prefix client run preview"
   },
   "keywords": [],
   "author": "",
