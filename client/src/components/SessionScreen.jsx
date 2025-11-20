@@ -3,8 +3,8 @@ import AdminView from './AdminView';
 import PlayerView from './PlayerView';
 import PlayerList from './PlayerList';
 
-function SessionScreen({ session, onSetRole, connectionStatus, onReconnect }) {
-  const { sessionId, playerId, adminId, players } = session || {};
+function SessionScreen({ session, onSetRole, onUpdateRoles, connectionStatus, onReconnect }) {
+  const { sessionId, playerId, adminId, players, roles } = session || {};
   const isAdmin = playerId === adminId;
 
   const sortedPlayers = useMemo(
@@ -39,11 +39,18 @@ function SessionScreen({ session, onSetRole, connectionStatus, onReconnect }) {
         </div>
         <div>
           {isAdmin ? (
-            <AdminView sessionId={sessionId} players={sortedPlayers} />
+            <AdminView
+              sessionId={sessionId}
+              players={sortedPlayers}
+              roles={roles}
+              onUpdateRoles={onUpdateRoles}
+              adminId={adminId}
+            />
           ) : (
             <PlayerView
               players={sortedPlayers}
               currentPlayer={currentPlayer}
+              roles={roles}
               onSetRole={onSetRole}
             />
           )}

@@ -5,6 +5,7 @@ const {
   setRole,
   rollDice,
   logMessage,
+  updateRoles,
   destroySession,
   handleDisconnect,
 } = require('./sessionManager');
@@ -24,6 +25,8 @@ function routeMessage(socket, message) {
       return rollDice(socket, message);
     case 'send_log':
       return logMessage(socket, message);
+    case 'update_roles':
+      return updateRoles(socket, message);
     case 'destroy_session':
       return destroySession(socket);
     default:
