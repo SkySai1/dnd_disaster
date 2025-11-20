@@ -1,0 +1,17 @@
+{
+  "name": "dnd_disaster",
+  "version": "1.0.0",
+  "description": "Realtime D&D disaster helper server",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node scripts/check-node-version.js && npm --prefix client run dev",
+    "client:install": "npm --prefix client install",
+    "client:build": "node scripts/check-node-version.js && npm --prefix client run build",
+    "client:preview": "node scripts/check-node-version.js && npm --prefix client run preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

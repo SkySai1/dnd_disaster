@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    image: dnd-disaster:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      WS_HOST: "0.0.0.0"
+      WS_PORT: "3000"
+      PORT: "3000"
+      PUBLIC_WS_URL: "ws://localhost:3000"
+      WS_PUBLIC_URL: "ws://localhost:3000"
+      VITE_CONFIG_PROXY_TARGET: "http://localhost:3000"
