@@ -35,6 +35,21 @@ first lookup fails. Because the WebSocket URL is supplied by the server at runti
 changing the environment variables above and restarting the backend is enough to
 retarget clients—even after a production build.
 
+### Docker / Compose
+
+Build the client bundle and run the WebSocket server in a container:
+
+```bash
+docker compose up --build
+```
+
+The included `compose.yaml` sets sane defaults for runtime configuration:
+
+- `WS_HOST`/`HOST`: interface for the WebSocket server (`0.0.0.0`).
+- `WS_PORT`/`PORT`: listening port (`3000`).
+- `PUBLIC_WS_URL`/`WS_PUBLIC_URL`: public WebSocket URL (`ws://localhost:3000`).
+- `VITE_CONFIG_PROXY_TARGET`: where the client config proxy points (`http://localhost:3000`).
+
 ## Protocol overview
 
 All communication occurs over WebSocket text frames containing JSON objects.
