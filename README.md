@@ -26,9 +26,18 @@ npm run client:install
 npm run dev # Vite dev server at http://localhost:5173 (runs from ./client)
 ```
 
-By default, the client fetches `config/ws-config.json` from the server to learn the
-WebSocket address. You can still override it explicitly with `VITE_WS_URL` if the
-config endpoint is unreachable.
+By default, the client fetches `/config/ws-config.json` from the server to learn the
+WebSocket address. During development, `/config` requests are proxied to
+`http://localhost:3000` (set `VITE_CONFIG_PROXY_TARGET` to change this) and the client
+will make a second attempt to `http://localhost:3000/config/ws-config.json` if the
+first lookup fails. You can override these behaviors with:
+
+- `VITE_CONFIG_URL` — custom config endpoint (defaults to `/config/ws-config.json`).
+- `VITE_CONFIG_PROXY_TARGET` — dev-only proxy target for `/config` (defaults to
+  `http://localhost:3000`).
+- `VITE_CONFIG_FALLBACK_ORIGIN` — origin for the second fetch attempt when the first
+  fails (defaults to `http://localhost:3000`).
+- `VITE_WS_URL` — direct override for the WebSocket URL (bypasses config endpoint).
 
 ## Protocol overview
 
