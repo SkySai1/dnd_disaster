@@ -1,0 +1,13 @@
+{
+  "name": "dnd_disaster",
+  "version": "1.0.0",
+  "description": "Realtime D&D disaster helper server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
