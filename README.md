@@ -3,6 +3,7 @@
 Minimal WebSocket server for managing lightweight D&D disaster game sessions. Sessions are kept purely in memory.
 
 This repository now also includes a lightweight React client for joining sessions and picking roles.
+The built client is served by the same Node process as the WebSocket server so both ship together.
 
 ## Running
 
@@ -42,6 +43,8 @@ Build the client bundle and run the WebSocket server in a container:
 ```bash
 docker compose up --build
 ```
+
+Then open http://localhost:3000/ to reach the bundled web client; WebSocket traffic uses the same port.
 
 The included `compose.yaml` sets sane defaults for runtime configuration:
 
