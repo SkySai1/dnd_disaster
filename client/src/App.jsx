@@ -42,6 +42,7 @@ function SessionRoute() {
             playerId: message.playerId,
             adminId: message.adminId,
             players: message.players || [],
+            roles: message.roles || [],
           });
           if (message.sessionId && sessionIdFromUrl !== message.sessionId) {
             navigate(`/session/${message.sessionId}`, { replace: true });
@@ -55,6 +56,17 @@ function SessionRoute() {
                   ...prev,
                   players: message.players || [],
                   adminId: message.adminId || prev.adminId,
+                }
+              : prev
+          );
+          break;
+        }
+        case 'roles_update': {
+          setSessionState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  roles: message.roles || [],
                 }
               : prev
           );
@@ -128,6 +140,10 @@ function SessionRoute() {
     sessionSocket.send({ type: 'set_role', role });
   }, []);
 
+  const onUpdateRoles = useCallback((roles) => {
+    sessionSocket.send({ type: 'update_roles', roles });
+  }, []);
+
   const onReconnect = useCallback(() => {
     sessionSocket.connect();
   }, []);
@@ -141,12 +157,13 @@ function SessionRoute() {
     <div className="app-shell">
       {!configLoaded && <div className="toast info">Загрузка конфигурации...</div>}
       {isJoined ? (
-        <SessionScreen
-          session={sessionState}
-          onSetRole={onSetRole}
-          connectionStatus={connectionStatus}
-          onReconnect={onReconnect}
-        />
+          <SessionScreen
+            session={sessionState}
+            onSetRole={onSetRole}
+            onUpdateRoles={onUpdateRoles}
+            connectionStatus={connectionStatus}
+            onReconnect={onReconnect}
+          />
       ) : (
         <JoinSessionScreen
           defaultSessionId={sessionIdFromUrl}

@@ -7,6 +7,8 @@
 const { sessions, socketLookup, generateId } = require('./state');
 const { broadcast, send } = require('./frames');
 
+const DEFAULT_ROLE = 'Guest';
+
 function sanitizePlayers(session) {
   return session.players.map((player) => ({
     playerId: player.playerId,
@@ -54,6 +56,37 @@ function emitPlayersUpdate(session) {
   });
 }
 
+function broadcastRoles(session) {
+  broadcast(session, { type: 'roles_update', roles: session.roles });
+}
+
+function normalizeRole(role) {
+  if (typeof role !== 'string') return '';
+  return role.trim();
+}
+
+function buildRoleList(inputRoles = []) {
+  const normalized = inputRoles
+    .map(normalizeRole)
+    .filter((role) => role.length > 0);
+
+  const deduped = [];
+  const seen = new Set();
+  normalized.forEach((role) => {
+    const key = role.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      deduped.push(role);
+    }
+  });
+
+  if (!seen.has(DEFAULT_ROLE.toLowerCase())) {
+    deduped.unshift(DEFAULT_ROLE);
+  }
+
+  return deduped;
+}
+
 function createSession(socket, payload) {
   const { name } = payload || {};
   if (!name) {
@@ -68,7 +101,7 @@ function createSession(socket, payload) {
     players: [],
     adminId: playerId,
     log: [],
-    roles: [],
+    roles: [DEFAULT_ROLE],
   };
 
   const player = {
@@ -126,7 +159,22 @@ function setRole(socket, payload) {
   const player = session.players.find((p) => p.playerId === playerId);
   if (!player) return;
 
-  player.role = payload.role || null;
+  const requestedRole = normalizeRole(payload.role);
+  if (requestedRole && !session.roles.includes(requestedRole)) {
+    send(socket, { type: 'error', message: 'Эта роль недоступна в сессии' });
+    return;
+  }
+
+  const takenBy = session.players.find(
+    (p) => p.role === requestedRole && p.playerId !== playerId
+  );
+
+  if (takenBy) {
+    send(socket, { type: 'error', message: 'Роль уже занята другим игроком' });
+    return;
+  }
+
+  player.role = requestedRole || null;
   broadcast(session, { type: 'role_update', playerId, role: player.role });
   emitPlayersUpdate(session);
   addLog(sessionId, playerId, `updated role to ${player.role || 'none'}`);
@@ -164,6 +212,33 @@ function logMessage(socket, payload) {
   if (!info) return;
   const { sessionId, playerId } = info;
   addLog(sessionId, playerId, payload.message || '');
+}
+
+function updateRoles(socket, payload) {
+  const info = socketLookup.get(socket);
+  if (!info) return;
+  const { sessionId, playerId } = info;
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  if (session.adminId !== playerId) {
+    send(socket, { type: 'error', message: 'Only admin can update roles' });
+    return;
+  }
+
+  const roles = buildRoleList(Array.isArray(payload.roles) ? payload.roles : []);
+  session.roles = roles;
+
+  session.players.forEach((player) => {
+    if (player.role && !roles.includes(player.role)) {
+      player.role = null;
+      broadcast(session, { type: 'role_update', playerId: player.playerId, role: null });
+    }
+  });
+
+  broadcastRoles(session);
+  emitPlayersUpdate(session);
+  addLog(sessionId, playerId, 'обновил список ролей');
 }
 
 function destroySession(socket) {
@@ -224,6 +299,7 @@ module.exports = {
   setRole,
   rollDice,
   logMessage,
+  updateRoles,
   destroySession,
   handleDisconnect,
 };

@@ -13,7 +13,7 @@ function PlayerList({ players, adminId }) {
             <strong>{player.name}</strong>{' '}
             {adminId === player.playerId && <span className="badge">Admin</span>}
           </div>
-          <div className="muted">{player.role || 'No role'}</div>
+          <div className="muted">{player.role || 'Роль не выбрана'}</div>
         </li>
       ))}
     </ul>

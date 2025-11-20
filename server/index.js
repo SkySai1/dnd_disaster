@@ -4,39 +4,88 @@ const fs = require('fs');
 const path = require('path');
 const { setupSocket } = require('./websocketServer');
 
-const configPath = path.join(__dirname, '..', 'config', 'ws-config.json');
+const clientDistDir = path.join(__dirname, '..', 'client', 'dist');
+const indexHtmlPath = path.join(clientDistDir, 'index.html');
 
-function loadWsConfig() {
-  try {
-    const file = fs.readFileSync(configPath, 'utf8');
-    return JSON.parse(file);
-  } catch (err) {
-    console.warn('Unable to read ws-config.json, falling back to defaults:', err);
-    return {};
+function buildRuntimeConfig() {
+  const host = process.env.WS_HOST || process.env.HOST || '0.0.0.0';
+  const port = Number(process.env.WS_PORT || process.env.PORT || 3000);
+  const publicWsUrl =
+    process.env.PUBLIC_WS_URL || process.env.WS_PUBLIC_URL || `ws://${host}:${port}`;
+
+  return {
+    wsUrl: publicWsUrl,
+    host,
+    port,
+  };
+}
+
+function getContentType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.html':
+      return 'text/html; charset=utf-8';
+    case '.js':
+      return 'application/javascript; charset=utf-8';
+    case '.css':
+      return 'text/css; charset=utf-8';
+    case '.json':
+      return 'application/json; charset=utf-8';
+    case '.svg':
+      return 'image/svg+xml';
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.ico':
+      return 'image/x-icon';
+    default:
+      return 'application/octet-stream';
   }
 }
 
-const rawConfig = loadWsConfig();
-const HOST = process.env.WS_HOST || rawConfig.host || '0.0.0.0';
-const PORT = Number(process.env.PORT || rawConfig.port || 3000);
-const PUBLIC_WS_URL =
-  process.env.PUBLIC_WS_URL || rawConfig.publicWsUrl || `ws://${HOST}:${PORT}`;
+function serveFile(res, filePath) {
+  const contentType = getContentType(filePath);
+  res.writeHead(200, { 'Content-Type': contentType });
+  fs.createReadStream(filePath).pipe(res);
+}
 
-const sharedConfigBody = JSON.stringify({
-  wsUrl: PUBLIC_WS_URL,
-  host: HOST,
-  port: PORT,
-});
+function isPathInside(base, target) {
+  const relative = path.relative(base, target);
+  return !relative.startsWith('..') && !path.isAbsolute(relative);
+}
 
 function handleHttpRequest(req, res) {
-  if (req.method === 'GET' && req.url === '/config/ws-config.json') {
+  const urlPath = decodeURI(req.url.split('?')[0]);
+
+  if (req.method === 'GET' && urlPath === '/config/ws-config.json') {
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
     });
-    res.end(sharedConfigBody);
+    res.end(JSON.stringify(buildRuntimeConfig()));
     return;
   }
+
+  // Serve static assets for the built web client
+  const sanitized = path.normalize(urlPath).replace(/^\//, '');
+  const requestedPath = path.join(clientDistDir, sanitized || 'index.html');
+  const resolvedPath = fs.existsSync(requestedPath) && fs.statSync(requestedPath).isDirectory()
+    ? path.join(requestedPath, 'index.html')
+    : requestedPath;
+
+  if (isPathInside(clientDistDir, resolvedPath) && fs.existsSync(resolvedPath)) {
+    serveFile(res, resolvedPath);
+    return;
+  }
+
+  // SPA fallback to index.html when assets are missing
+  if (fs.existsSync(indexHtmlPath)) {
+    serveFile(res, indexHtmlPath);
+    return;
+  }
+
   res.statusCode = 404;
   res.end();
 }
@@ -73,6 +122,9 @@ server.on('upgrade', (req, socket) => {
   setupSocket(socket);
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`WebSocket server running on ${HOST}:${PORT} (public ${PUBLIC_WS_URL})`);
+const runtimeConfig = buildRuntimeConfig();
+server.listen(runtimeConfig.port, runtimeConfig.host, () => {
+  console.log(
+    `WebSocket server running on ${runtimeConfig.host}:${runtimeConfig.port} (public ${runtimeConfig.wsUrl})`
+  );
 });

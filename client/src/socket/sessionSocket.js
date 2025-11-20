@@ -8,7 +8,7 @@ class SessionSocket {
     this.queue = [];
     const { protocol, host } = window.location;
     const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-    this.wsUrl = import.meta.env.VITE_WS_URL || `${wsProtocol}//${host}`;
+    this.wsUrl = `${wsProtocol}//${host}`;
   }
 
   setWsUrl(url) {
