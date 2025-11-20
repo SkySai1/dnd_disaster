@@ -13,6 +13,8 @@ npm start
 
 The server listens on `PORT` (default `3000`).
 
+> ⚠️ The client tooling requires Node.js 18 or newer. Both x86_64 and arm64 builds are available from [nodejs.org](https://nodejs.org) or via a version manager such as `nvm`.
+
 ### Client (Stage 2 prototype)
 
 ```
