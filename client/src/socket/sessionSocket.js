@@ -6,7 +6,9 @@ class SessionSocket {
     this.status = 'disconnected';
     this.connectPromise = null;
     this.queue = [];
-    this.wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:3000`;
+    const { protocol, host } = window.location;
+    const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+    this.wsUrl = import.meta.env.VITE_WS_URL || `${wsProtocol}//${host}`;
   }
 
   setWsUrl(url) {

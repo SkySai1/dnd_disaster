@@ -1,5 +1,11 @@
-const DEFAULT_WS_URL = `ws://${window.location.hostname}:3000`;
-const DEFAULT_CONFIG_ENDPOINT = `${window.location.protocol}//${window.location.hostname}:3000/config/ws-config.json`;
+function buildDefaultWsUrl() {
+  const { protocol, host } = window.location;
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${wsProtocol}//${host}`;
+}
+
+const DEFAULT_WS_URL = buildDefaultWsUrl();
+const DEFAULT_CONFIG_ENDPOINT = '/config/ws-config.json';
 
 export async function fetchWsConfig() {
   const endpoint = import.meta.env.VITE_CONFIG_URL || DEFAULT_CONFIG_ENDPOINT;
@@ -10,7 +16,13 @@ export async function fetchWsConfig() {
     }
     const json = await response.json();
     return {
-      wsUrl: json.wsUrl || import.meta.env.VITE_WS_URL || DEFAULT_WS_URL,
+      wsUrl:
+        json.wsUrl ||
+        (json.host && json.port
+          ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${json.host}:${json.port}`
+          : null) ||
+        import.meta.env.VITE_WS_URL ||
+        DEFAULT_WS_URL,
       host: json.host,
       port: json.port,
       source: 'remote-config',
