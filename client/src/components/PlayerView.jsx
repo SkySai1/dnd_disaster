@@ -2,7 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 const DEFAULT_ROLE = 'Guest';
 
-function PlayerView({ players, currentPlayer, roles, onSetRole }) {
+function PlayerView({
+  players,
+  currentPlayer,
+  roles,
+  onSetRole,
+  diceWindowOpen,
+  diceRoundId,
+  diceResults,
+  onRollDice,
+}) {
   const [isChooserOpen, setChooserOpen] = useState(false);
 
   useEffect(() => {
@@ -30,6 +39,9 @@ function PlayerView({ players, currentPlayer, roles, onSetRole }) {
     onSetRole(role);
     setChooserOpen(false);
   };
+
+  const currentResult = diceResults?.[currentPlayer?.playerId];
+  const hasRolled = currentResult && currentResult.roundId === diceRoundId;
 
   const renderRoleButton = (role) => {
     const takenBy = takenByOther.get(role);
@@ -67,6 +79,27 @@ function PlayerView({ players, currentPlayer, roles, onSetRole }) {
           <button className="secondary" onClick={() => handleSelectRole(null)}>
             Сбросить роль
           </button>
+        )}
+      </div>
+
+      <div className="dice-panel">
+        <h4>Dice roll</h4>
+        <p className="muted">
+          {diceRoundId ? `Round ${diceRoundId}` : 'No dice round yet'} |{' '}
+          {diceWindowOpen ? 'Window open' : 'Window closed'}
+        </p>
+        {diceWindowOpen ? (
+          hasRolled ? (
+            <div className="badge">Your result: {currentResult.value}</div>
+          ) : (
+            <button type="button" onClick={() => onRollDice?.()}>
+              Roll d20
+            </button>
+          )
+        ) : hasRolled ? (
+          <div className="badge secondary">Your result: {currentResult.value}</div>
+        ) : (
+          <p className="muted">Dice window is closed.</p>
         )}
       </div>
 
