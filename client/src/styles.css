@@ -160,6 +160,11 @@ button.small {
   border-radius: 999px;
 }
 
+.badge.secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
 .card {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -242,6 +247,89 @@ button.small {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.log-section {
+  margin-top: 24px;
+}
+
+.event-log {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.event-log__list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event-log__item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.event-log__meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.event-log__form {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.event-log__form input {
+  flex: 1;
+}
+
+.dice-indicator {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  margin-right: 10px;
+  font-weight: 700;
+}
+
+.player-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dice-panel {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.dice-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+  margin-bottom: 12px;
 }
 
 .toast {

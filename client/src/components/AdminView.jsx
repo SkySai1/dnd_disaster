@@ -1,9 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PlayerList from './PlayerList';
 
 const DEFAULT_ROLE = 'Guest';
 
-function AdminView({ sessionId, players, roles, onUpdateRoles, adminId }) {
+function AdminView({
+  sessionId,
+  players,
+  roles,
+  onUpdateRoles,
+  diceWindowOpen,
+  diceRoundId,
+  onOpenDiceWindow,
+  onCloseDiceWindow,
+}) {
   const [roleInput, setRoleInput] = useState('');
   const [draftRoles, setDraftRoles] = useState([]);
 
@@ -41,6 +49,27 @@ function AdminView({ sessionId, players, roles, onUpdateRoles, adminId }) {
       <h3>Admin panel</h3>
       <p>You are the game master.</p>
       <p className="muted">Session: {sessionId}</p>
+
+      <div className="dice-controls">
+        <div>
+          <p className="muted">Dice window</p>
+          <strong>{diceWindowOpen ? 'Open' : 'Closed'}</strong>
+          {diceRoundId ? <span className="muted"> (Round {diceRoundId})</span> : null}
+        </div>
+        <div className="actions">
+          <button type="button" onClick={onOpenDiceWindow} disabled={diceWindowOpen}>
+            Open Dice Window
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={onCloseDiceWindow}
+            disabled={!diceWindowOpen}
+          >
+            Close Dice Window
+          </button>
+        </div>
+      </div>
 
       <form className="form" onSubmit={handleAddRole}>
         <label>
@@ -81,8 +110,6 @@ function AdminView({ sessionId, players, roles, onUpdateRoles, adminId }) {
         })}
       </ul>
 
-      <h4>Игроки</h4>
-      <PlayerList players={players} adminId={adminId} />
     </div>
   );
 }

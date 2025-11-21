@@ -5,6 +5,8 @@ const {
   setRole,
   rollDice,
   logMessage,
+  openDiceWindow,
+  closeDiceWindow,
   updateRoles,
   destroySession,
   handleDisconnect,
@@ -21,6 +23,10 @@ function routeMessage(socket, message) {
       return leaveSession(socket);
     case 'set_role':
       return setRole(socket, message);
+    case 'open_dice_window':
+      return openDiceWindow(socket, message);
+    case 'close_dice_window':
+      return closeDiceWindow(socket, message);
     case 'roll_dice':
       return rollDice(socket, message);
     case 'send_log':

@@ -2,9 +2,30 @@ import React, { useMemo } from 'react';
 import AdminView from './AdminView';
 import PlayerView from './PlayerView';
 import PlayerList from './PlayerList';
+import EventLog from './EventLog';
 
-function SessionScreen({ session, onSetRole, onUpdateRoles, connectionStatus, onReconnect }) {
-  const { sessionId, playerId, adminId, players, roles } = session || {};
+function SessionScreen({
+  session,
+  onSetRole,
+  onUpdateRoles,
+  onSendLog,
+  onOpenDiceWindow,
+  onCloseDiceWindow,
+  onRollDice,
+  connectionStatus,
+  onReconnect,
+}) {
+  const {
+    sessionId,
+    playerId,
+    adminId,
+    players,
+    roles,
+    log,
+    diceWindowOpen,
+    diceRoundId,
+    diceResults,
+  } = session || {};
   const isAdmin = playerId === adminId;
 
   const sortedPlayers = useMemo(
@@ -35,7 +56,12 @@ function SessionScreen({ session, onSetRole, onUpdateRoles, connectionStatus, on
       <div className="grid">
         <div>
           <h3>Players</h3>
-          <PlayerList players={sortedPlayers} adminId={adminId} />
+          <PlayerList
+            players={sortedPlayers}
+            adminId={adminId}
+            diceResults={diceResults}
+            diceRoundId={diceRoundId}
+          />
         </div>
         <div>
           {isAdmin ? (
@@ -44,7 +70,10 @@ function SessionScreen({ session, onSetRole, onUpdateRoles, connectionStatus, on
               players={sortedPlayers}
               roles={roles}
               onUpdateRoles={onUpdateRoles}
-              adminId={adminId}
+              diceWindowOpen={diceWindowOpen}
+              diceRoundId={diceRoundId}
+              onOpenDiceWindow={onOpenDiceWindow}
+              onCloseDiceWindow={onCloseDiceWindow}
             />
           ) : (
             <PlayerView
@@ -52,9 +81,18 @@ function SessionScreen({ session, onSetRole, onUpdateRoles, connectionStatus, on
               currentPlayer={currentPlayer}
               roles={roles}
               onSetRole={onSetRole}
+              diceWindowOpen={diceWindowOpen}
+              diceRoundId={diceRoundId}
+              diceResults={diceResults}
+              onRollDice={onRollDice}
             />
           )}
         </div>
+      </div>
+
+      <div className="log-section">
+        <h3>Event log</h3>
+        <EventLog log={log || []} onSend={onSendLog} />
       </div>
     </div>
   );

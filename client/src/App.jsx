@@ -43,6 +43,10 @@ function SessionRoute() {
             adminId: message.adminId,
             players: message.players || [],
             roles: message.roles || [],
+            log: message.log || [],
+            diceWindowOpen: Boolean(message.diceWindowOpen),
+            diceRoundId: message.diceRoundId ?? null,
+            diceResults: message.diceResults || {},
           });
           if (message.sessionId && sessionIdFromUrl !== message.sessionId) {
             navigate(`/session/${message.sessionId}`, { replace: true });
@@ -54,10 +58,10 @@ function SessionRoute() {
             prev
               ? {
                   ...prev,
-                  players: message.players || [],
-                  adminId: message.adminId || prev.adminId,
-                }
-              : prev
+                players: message.players || [],
+                adminId: message.adminId || prev.adminId,
+              }
+            : prev
           );
           break;
         }
@@ -80,6 +84,47 @@ function SessionRoute() {
             );
             return { ...prev, players: updatedPlayers };
           });
+          break;
+        }
+        case 'log_event': {
+          setSessionState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  log: [...(prev.log || []), message.entry],
+                }
+              : prev
+          );
+          break;
+        }
+        case 'dice_window_state': {
+          setSessionState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              diceWindowOpen: Boolean(message.open),
+              diceRoundId: message.roundId ?? prev.diceRoundId,
+              diceResults: message.open ? {} : prev.diceResults,
+              log: prev.log,
+            };
+          });
+          break;
+        }
+        case 'dice_roll': {
+          setSessionState((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  diceResults: {
+                    ...(prev.diceResults || {}),
+                    [message.playerId]: {
+                      roundId: message.roundId,
+                      value: message.value,
+                    },
+                  },
+                }
+              : prev
+          );
           break;
         }
         case 'error': {
@@ -144,6 +189,22 @@ function SessionRoute() {
     sessionSocket.send({ type: 'update_roles', roles });
   }, []);
 
+  const onSendLog = useCallback((message) => {
+    sessionSocket.send({ type: 'send_log', message });
+  }, []);
+
+  const onOpenDiceWindow = useCallback(() => {
+    sessionSocket.send({ type: 'open_dice_window' });
+  }, []);
+
+  const onCloseDiceWindow = useCallback(() => {
+    sessionSocket.send({ type: 'close_dice_window' });
+  }, []);
+
+  const onRollDice = useCallback(() => {
+    sessionSocket.send({ type: 'roll_dice', dice: 'd20' });
+  }, []);
+
   const onReconnect = useCallback(() => {
     sessionSocket.connect();
   }, []);
@@ -161,6 +222,10 @@ function SessionRoute() {
             session={sessionState}
             onSetRole={onSetRole}
             onUpdateRoles={onUpdateRoles}
+            onSendLog={onSendLog}
+            onOpenDiceWindow={onOpenDiceWindow}
+            onCloseDiceWindow={onCloseDiceWindow}
+            onRollDice={onRollDice}
             connectionStatus={connectionStatus}
             onReconnect={onReconnect}
           />

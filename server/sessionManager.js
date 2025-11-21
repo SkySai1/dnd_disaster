@@ -26,20 +26,30 @@ function sessionSnapshot(session, playerId) {
     players: sanitizePlayers(session),
     log: session.log,
     roles: session.roles,
+    diceWindowOpen: session.diceWindowOpen,
+    diceRoundId: session.diceRoundId,
+    diceResults: session.diceResults,
   };
 }
 
-function addLog(sessionId, author, message) {
+function addLog(sessionId, authorId, message, kind = 'user', authorNameOverride) {
   const session = sessions.get(sessionId);
   if (!session) return;
+
+  const player = session.players.find((p) => p.playerId === authorId);
+  const authorName =
+    authorNameOverride || (player && player.name) || 'System';
   const entry = {
-    type: 'log_event',
+    id: generateId(8),
     timestamp: Date.now(),
-    author,
+    authorId,
+    authorName,
     message,
+    kind,
   };
+
   session.log.push(entry);
-  broadcast(session, entry);
+  broadcast(session, { type: 'log_event', entry });
 }
 
 function ensureAdmin(session) {
@@ -102,6 +112,9 @@ function createSession(socket, payload) {
     adminId: playerId,
     log: [],
     roles: [DEFAULT_ROLE],
+    diceWindowOpen: false,
+    diceRoundId: 0,
+    diceResults: {},
   };
 
   const player = {
@@ -117,17 +130,19 @@ function createSession(socket, payload) {
 
   send(socket, sessionSnapshot(session, playerId));
   emitPlayersUpdate(session);
-  addLog(sessionId, playerId, 'created the session');
+  addLog(sessionId, playerId, 'created the session', 'system');
 }
 
 function joinSession(socket, payload) {
   const { name, sessionId } = payload || {};
+
   if (!name || !sessionId) {
-    send(socket, { type: 'error', message: 'Name and sessionId are required to join' });
+    send(socket, { type: 'error', message: 'Name and sessionId are required' });
     return;
   }
 
   const session = sessions.get(sessionId);
+
   if (!session) {
     send(socket, { type: 'error', message: 'Session not found' });
     return;
@@ -141,7 +156,7 @@ function joinSession(socket, payload) {
 
   send(socket, sessionSnapshot(session, playerId));
   emitPlayersUpdate(session);
-  addLog(sessionId, playerId, 'joined the session');
+  addLog(sessionId, playerId, 'joined the session', 'system');
 }
 
 function leaveSession(socket) {
@@ -189,6 +204,49 @@ function parseDice(dice) {
   return sides;
 }
 
+function openDiceWindow(socket) {
+  const info = socketLookup.get(socket);
+  if (!info) return;
+  const { sessionId, playerId } = info;
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  if (session.adminId !== playerId) {
+    send(socket, { type: 'error', message: 'Only admin can open dice window' });
+    return;
+  }
+
+  session.diceWindowOpen = true;
+  session.diceRoundId += 1;
+  session.diceResults = {};
+
+  broadcast(session, {
+    type: 'dice_window_state',
+    open: true,
+    roundId: session.diceRoundId,
+  });
+}
+
+function closeDiceWindow(socket) {
+  const info = socketLookup.get(socket);
+  if (!info) return;
+  const { sessionId, playerId } = info;
+  const session = sessions.get(sessionId);
+  if (!session) return;
+
+  if (session.adminId !== playerId) {
+    send(socket, { type: 'error', message: 'Only admin can close dice window' });
+    return;
+  }
+
+  session.diceWindowOpen = false;
+  broadcast(session, {
+    type: 'dice_window_state',
+    open: false,
+    roundId: session.diceRoundId,
+  });
+}
+
 function rollDice(socket, payload) {
   const info = socketLookup.get(socket);
   if (!info) return;
@@ -196,22 +254,40 @@ function rollDice(socket, payload) {
   const session = sessions.get(sessionId);
   if (!session) return;
 
+  if (!session.diceWindowOpen) {
+    send(socket, { type: 'error', message: 'Dice window is closed' });
+    return;
+  }
+
   const sides = parseDice(payload.dice);
   if (!sides) {
     send(socket, { type: 'error', message: 'Invalid dice format' });
     return;
   }
+
+  const previous = session.diceResults[playerId];
+  if (previous && previous.roundId === session.diceRoundId) {
+    send(socket, { type: 'error', message: 'Already rolled in this round' });
+    return;
+  }
   const value = Math.floor(Math.random() * sides) + 1;
-  const event = { type: 'dice_roll', playerId, dice: payload.dice, value };
+  const event = {
+    type: 'dice_roll',
+    playerId,
+    dice: payload.dice,
+    value,
+    roundId: session.diceRoundId,
+  };
+  session.diceResults[playerId] = { roundId: session.diceRoundId, value };
   broadcast(session, event);
-  addLog(sessionId, playerId, `rolled ${payload.dice} and got ${value}`);
+  addLog(sessionId, playerId, `rolled ${value} on ${payload.dice}`, 'dice');
 }
 
 function logMessage(socket, payload) {
   const info = socketLookup.get(socket);
   if (!info) return;
   const { sessionId, playerId } = info;
-  addLog(sessionId, playerId, payload.message || '');
+  addLog(sessionId, playerId, payload.message || '', 'user');
 }
 
 function updateRoles(socket, payload) {
@@ -270,6 +346,7 @@ function handleDisconnect(socket, intentional = false) {
   if (!session) return;
 
   const idx = session.players.findIndex((p) => p.playerId === playerId);
+  const playerName = idx !== -1 ? session.players[idx].name : undefined;
   if (idx !== -1) {
     session.players.splice(idx, 1);
   }
@@ -280,9 +357,9 @@ function handleDisconnect(socket, intentional = false) {
   }
 
   if (!intentional) {
-    addLog(sessionId, playerId, 'disconnected');
+    addLog(sessionId, playerId, 'disconnected', 'system', playerName);
   } else {
-    addLog(sessionId, playerId, 'left the session');
+    addLog(sessionId, playerId, 'left the session', 'system', playerName);
   }
 
   emitPlayersUpdate(session);
@@ -302,4 +379,6 @@ module.exports = {
   updateRoles,
   destroySession,
   handleDisconnect,
+  openDiceWindow,
+  closeDiceWindow,
 };
