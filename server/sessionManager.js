@@ -37,11 +37,13 @@ function addLog(sessionId, authorId, message, kind = 'user', authorNameOverride)
   if (!session) return;
 
   const player = session.players.find((p) => p.playerId === authorId);
+  const authorName =
+    authorNameOverride || (player && player.name) || 'System';
   const entry = {
     id: generateId(8),
     timestamp: Date.now(),
     authorId,
-    authorName: authorNameOverride || player?.name || 'System',
+    authorName,
     message,
     kind,
   };
@@ -278,7 +280,7 @@ function rollDice(socket, payload) {
   };
   session.diceResults[playerId] = { roundId: session.diceRoundId, value };
   broadcast(session, event);
-  addLog(sessionId, playerId, `rolled ${payload.dice} and got ${value}`, 'dice');
+  addLog(sessionId, playerId, `rolled ${value} on ${payload.dice}`, 'dice');
 }
 
 function logMessage(socket, payload) {
