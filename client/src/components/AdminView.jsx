@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PlayerList from './PlayerList';
 
 const DEFAULT_ROLE = 'Guest';
 
@@ -8,10 +7,8 @@ function AdminView({
   players,
   roles,
   onUpdateRoles,
-  adminId,
   diceWindowOpen,
   diceRoundId,
-  diceResults,
   onOpenDiceWindow,
   onCloseDiceWindow,
 }) {
@@ -113,13 +110,6 @@ function AdminView({
         })}
       </ul>
 
-      <h4>Игроки</h4>
-      <PlayerList
-        players={players}
-        adminId={adminId}
-        diceResults={diceResults}
-        diceRoundId={diceRoundId}
-      />
     </div>
   );
 }

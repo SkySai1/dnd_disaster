@@ -70,10 +70,8 @@ function SessionScreen({
               players={sortedPlayers}
               roles={roles}
               onUpdateRoles={onUpdateRoles}
-              adminId={adminId}
               diceWindowOpen={diceWindowOpen}
               diceRoundId={diceRoundId}
-              diceResults={diceResults}
               onOpenDiceWindow={onOpenDiceWindow}
               onCloseDiceWindow={onCloseDiceWindow}
             />
